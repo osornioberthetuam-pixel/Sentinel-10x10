@@ -5,9 +5,8 @@ on:
       bbox:
         description: "Oeste Sur Este Norte, separados por espacios (EPSG:4326)"
         required: false
+        default: "-99.58 19.15 -99.42 19.35"
         type: string
-  schedule:
-    - cron: '20 12 5 * *'
 permissions:
   contents: read
 jobs:
@@ -15,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      BBOX: ${{ inputs.bbox || vars.SIGMAR_BBOX }}
+      BBOX: ${{ inputs.bbox || '-99.58 19.15 -99.42 19.35' }}
     steps:
       - uses: actions/checkout@v4
       - name: Comprobar polígono configurado
