@@ -1,0 +1,45 @@
+name: SIGMAR Sentinel-2 gratuito
+on:
+  workflow_dispatch:
+    inputs:
+      bbox:
+        description: "Oeste Sur Este Norte, separados por espacios (EPSG:4326)"
+        required: false
+        type: string
+  schedule:
+    - cron: '20 12 5 * *'
+permissions:
+  contents: read
+jobs:
+  sentinel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BBOX: ${{ inputs.bbox || vars.SIGMAR_BBOX }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comprobar polígono configurado
+        run: |
+          if [ -z "$BBOX" ]; then
+            echo "::error::Configure Settings > Secrets and variables > Actions > Variables > SIGMAR_BBOX (OESTE SUR ESTE NORTE)."
+            exit 1
+          fi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Descargar y procesar
+        shell: bash
+        run: |
+          read -r W S E N <<< "$BBOX"
+          END=$(date -u +%F)
+          START=$(date -u -d '45 days ago' +%F)
+          python sentinel_sigmar.py --bbox "$W" "$S" "$E" "$N" --start "$START" --end "$END" --max-cloud 30 --output salida
+      - name: Guardar resultados descargables
+        uses: actions/upload-artifact@v4
+        with:
+          name: sigmar-sentinel-6-bandas
+          path: salida/
+          retention-days: 7
+          if-no-files-found: error
